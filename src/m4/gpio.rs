@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(non_snake_case)]
 
 #[repr(C)]
 pub struct GPIO {
@@ -15,11 +16,32 @@ pub struct GPIO {
 }
 
 
+#[derive(Clone, Copy)]
 pub enum MODE {
     Input = 0b00,
     Output = 0b01,
     Alternate = 0b10,
     Analog = 0b11,
+}
+
+#[derive(Clone,Copy)]
+pub enum PIN {
+    PIN00,
+    PIN01,
+    PIN02,
+    PIN03,
+    PIN04,
+    PIN05,
+    PIN06,
+    PIN07,
+    PIN08,
+    PIN09,
+    PIN10,
+    PIN11,
+    PIN12,
+    PIN13,
+    PIN14,
+    PIN15,
 }
 
 impl GPIO {
@@ -48,11 +70,11 @@ impl GPIO {
     }
 
     #[inline(always)]
-    pub fn setmode(&mut self, port: u8, mode: MODE) {
+    pub fn setmode(&mut self, port: PIN, mode: MODE) {
         unsafe {
             let mut m = ::core::intrinsics::volatile_load::<u32>(&self.MODE);
-            let mask: u32 = 0b11 << (port * 2);
-            let data = (mode as u32) << (port * 2);
+            let mask: u32 = 0b11 << ((port as usize) * 2);
+            let data = (mode as u32) << ((port as usize) * 2);
             m &= !mask;
             m |= data;
             ::core::intrinsics::volatile_store(&mut self.MODE, m);

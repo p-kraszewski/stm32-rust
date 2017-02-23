@@ -1,5 +1,5 @@
 [package]
-name = "app"
+name = "stm32"
 version = "0.1.0"
 authors = ["Paweł Kraszewski, <root@linuxpedia.pl>"]
 

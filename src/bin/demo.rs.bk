@@ -1,5 +1,5 @@
-#![feature(core_intrinsics,asm,lang_items)]
-
+#![feature(asm,lang_items)]
+#![feature(trace_macros)]
 // We won't use the usual `main` function. We are going to use a different
 // "entry point".
 #![no_main]
@@ -11,27 +11,19 @@
 #![allow(non_snake_case)]
 
 #[macro_use]
-mod ARM;
-use ARM::STM32::F437::*;
+extern crate stm32;
 
-vectors![Some(ARM::breakpoint), // NMI
-         Some(ARM::breakpoint), // Hard fault
-         Some(ARM::breakpoint), // Memmanage fault
-         Some(ARM::breakpoint), // Bus fault
-         Some(ARM::breakpoint), // Usage fault
-         None, // Reserved
-         None, // Reserved
-         None, // Reserved
-         None, // Reserved
-         Some(ARM::breakpoint), // SVCall
-         None, // Reserved for Debug
-         None, // Reserved
-         Some(ARM::breakpoint), // PendSV
-         Some(ARM::breakpoint)];
+use stm32::f437::*;
+use stm32::prelude::breakpoint as bp;
+
+vectors!{
+    Some(bp), Some(bp), Some(bp), Some(bp), Some(bp), None,
+    None, None, None, Some(bp), None, None, Some(bp), Some(bp)
+         }
 
 #[export_name = "_reset"]
 pub extern "C" fn main() -> ! {
-    power_on_gpioe();
+     power_on_gpioe();
     put_pe9_in_output_mode();
     set_pe9_high();
     set_pe9_low();
@@ -62,22 +54,15 @@ fn power_on_gpioe() {
 }
 
 fn put_pe9_in_output_mode() {
-    unsafe {
-        (*GPIOE).setmode(9, GPIO_MODE::Output);
-    }
+    io!{GPIOE | setmode(GPIO_PIN::PIN09, GPIO_MODE::Output)};
 }
 
 fn set_pe9_high() {
-    unsafe {
-        (*GPIOE).bset(1 << 9);
-    }
+    io!{GPIOE | bset(0b0000001000000000) };
 }
 
 fn set_pe9_low() {
-    unsafe {
-        (*GPIOE).breset(1 << 9);
-
-    }
+    io!{GPIOE | breset(0b0000001000000000) };
 }
 
 // Finally, we need to define the panic_fmt "lang item", which is just a
