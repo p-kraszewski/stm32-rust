@@ -8,7 +8,7 @@
 // threads and files and those are not available on this platform.
 #![no_std]
 
-#![allow(non_snake_case)]
+// ![allow(non_snake_case)]
 
 #[macro_use]
 extern crate stm32;
@@ -19,7 +19,7 @@ use stm32::prelude::breakpoint as bp;
 vectors!{
     Some(bp), Some(bp), Some(bp), Some(bp), Some(bp), None,
     None, None, None, Some(bp), None, None, Some(bp), Some(bp)
-         }
+        }
 
 #[export_name = "_reset"]
 pub extern "C" fn main() -> ! {
@@ -32,26 +32,9 @@ pub extern "C" fn main() -> ! {
 }
 
 fn power_on_gpioe() {
-    // /// Start address of the RCC register block
-    // const RCC: u32 = 0x4002_1000;
-    //
-    // /// Offset address of the AHBENR register
-    // const RCC_AHBENR: u32 = 0x14;
-    //
-    // /// IOPCEN bit mask
-    //    const RCC_AHBENR_IOPEEN: u32 = 1 << 21;
-    //    // unsafe {
-    //    //     // Pointer to the AHBENR register
-    //    //     let ahbenr = (RCC + RCC_AHBENR) as *mut u32;
-    //    //
-    //    //     // IOPECN = 1
-    //    //     *ahbenr |= RCC_AHBENR_IOPEEN;
-    //    // }
-    //    unsafe {
-    //        AHB1[(0x1000 + 0x0014) / 4] |= RCC_AHBENR_IOPEEN;
-    //    }
-    let n = io!{get SPEED from GPIOE};
-    io!{set SPEED in GPIOE to n+5};
+    const RCC_AHBENR_IOPEEN: u32 = 1 << 21;
+    io!{RCC.AHB1EN += RCC_AHBENR_IOPEEN};
+    io!{RCC.AHB1EN -= RCC_AHBENR_IOPEEN};
 }
 
 fn put_pe9_in_output_mode() {

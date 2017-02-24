@@ -34,8 +34,8 @@ macro_rules! count_tts {
 macro_rules! vectors {
     () => {};
     ( $($x:expr),+) => {
-    use stm32::prelude::VectorHandler;
-    build_table!(count_tts!($($x)+),$($x),+);
+        use stm32::prelude::VectorHandler;
+        build_table!(count_tts!($($x)+),$($x),+);
     };
 }
 
@@ -46,47 +46,114 @@ macro_rules! build_table {
         #[export_name = "_VECTORS"]
         #[allow(unused)]
         #[no_mangle]
-        pub static VECTORS: [VectorHandler; $c ] =
-         [ $($x),+ ];
+        pub static VECTORS: [VectorHandler; $c ] = [ $($x),+ ];
     }
 }
 
 #[macro_export]
 macro_rules! iomap {
     () => {};
-    ($( $templ:ident @ $adr:tt -> $dev:tt);+) => {
-    $(
-        pub const $dev: *mut $templ = $adr as *mut $templ;
-    )+
+    ($( $dev:tt is $templ:ident @ $adr:tt );+) => {
+        $(
+            pub const $dev: *mut $templ = $adr as *mut $templ;
+        )+
     };
 }
 
 #[macro_export]
 macro_rules! io {
- (with $dev:ident do $op:ident ($($args:expr),+) ) => {
-    unsafe { (*$dev).$op($($args),*) }
- };
-  ( $dev:ident . $op:ident ($($args:expr),+) ) => {
-    unsafe { (*$dev).$op($($args),*) }
- };
-( $dev:ident . $port:ident = $val:expr ) => {
- unsafe {
+    (with $dev:ident do $op:ident ($($args:expr),+) ) => {
+        unsafe { (*$dev).$op($($args),*) }
+    };
+
+    ( $dev:ident . $op:ident ($($args:expr),+) ) => {
+        unsafe { (*$dev).$op($($args),*) }
+    };
+
+    ( $dev:ident . $port:ident = $val:expr ) => {
+        unsafe {
             ::core::intrinsics::volatile_store(&mut (*$dev).$port, $val as u32);
         }
- };
- ( set $port:ident in $dev:ident to $val:expr ) => {
- unsafe {
+    };
+
+    ( set $port:ident in $dev:ident to $val:expr ) => {
+        unsafe {
             ::core::intrinsics::volatile_store(&mut (*$dev).$port, $val as u32);
         }
- };
- ( $dev:ident . $port:ident ) => {
- unsafe {
-    ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port))
+    };
+
+    ( $dev:ident . $port:ident ) => {
+        unsafe {
+            ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port))
         }
- };
- (get $port:ident from $dev:ident) => {
- unsafe {
-    ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port))
+    };
+
+    (get $port:ident from $dev:ident) => {
+        unsafe {
+            ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port))
         }
- };
+    };
+
+    ($dev:ident . $port:ident |= $val:expr) => {
+        unsafe {
+            let v = ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port));
+            ::core::intrinsics::volatile_store(&mut (*$dev).$port, v | $val as u32);
+        }
+    };
+
+    ($dev:ident . $port:ident &= $val:expr) => {
+        unsafe {
+            let v = ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port));
+            ::core::intrinsics::volatile_store(&mut (*$dev).$port, v & $val as u32);
+        }
+    };
+
+    ($dev:ident . $port:ident ^= $val:expr) => {
+        unsafe {
+            let v = ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port));
+            ::core::intrinsics::volatile_store(&mut (*$dev).$port, v ^ $val as u32);
+        }
+    };
+
+    ($dev:ident . $port:ident += $val:expr) => {
+        unsafe {
+            let v = ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port));
+            ::core::intrinsics::volatile_store(&mut (*$dev).$port, v | $val as u32);
+        }
+    };
+
+    ($dev:ident . $port:ident -= $val:expr) => {
+        unsafe {
+            let v = ::core::intrinsics::volatile_load::<u32>(&((*$dev).$port));
+            ::core::intrinsics::volatile_store(&mut (*$dev).$port, v & !$val as u32);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! device {
+    ($name:ident | $($reg:tt)* ) => {
+        #[repr(C)]
+        #[allow(non_snake_case)]
+        #[allow(dead_code)]
+        pub struct $name {
+        $(
+            pub $reg: u32
+        ),*
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! register {
+    (<- $s:ident . $port:ident) => {
+        unsafe {
+            ::core::intrinsics::volatile_load::<u32>(&$s.$port)
+        }
+    };
+    ($s:ident . $port:ident <- $val:expr) => {
+        unsafe {
+            ::core::intrinsics::volatile_store(&mut $s.$port,$val)
+        }
+    };
 }
